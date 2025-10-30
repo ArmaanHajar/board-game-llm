@@ -1,0 +1,49 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: board-game-llm:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/board-game-llm.tar
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+          path: /tmp/board-game-llm.tar
+          retention-days: 7
+
+      - name: Upload Dockerfile as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockerfile-${{ github.sha }}
+          path: ./Dockerfile
+          retention-days: 30
+
+      - name: Image size and info
+        run: |
+          echo "Docker image built successfully!"
+          echo "Image tag: board-game-llm:${{ github.sha }}"
+          ls -lh /tmp/board-game-llm.tar
