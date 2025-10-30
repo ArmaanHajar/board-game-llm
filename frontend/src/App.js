@@ -13,11 +13,14 @@ function App() {
   async function handleClick(pos) {
     console.log("Sending move:", pos); // should print 0–8 in order
 
-    if (winner || loading) return;
+    // Prevent clicks on already-taken squares
+    const row = Math.floor(pos / 3);
+    const col = pos % 3;
+    if (board[row][col] !== "-" || winner || loading) return;
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5050/api/tictactoe/move", {
+      const response = await fetch("/api/tictactoe/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pos }), // Backend expects { pos: int }
@@ -48,7 +51,7 @@ function App() {
 
   async function resetBoard() {
     try {
-      await fetch("http://localhost:5050/api/tictactoe/reset", {
+      await fetch("/api/tictactoe/reset", {
         method: "POST",
       });
     } catch (err) {
@@ -74,16 +77,19 @@ function App() {
           <div key={rIndex} style={{ display: "flex" }}>
             {row.map((cell, cIndex) => {
               const pos = rIndex * 3 + cIndex; // 0–8 layout (same as backend)
+              const isTaken = cell !== "-";
               return (
                 <button
                   key={cIndex}
                   onClick={() => handleClick(pos)}
+                  disabled={isTaken || winner || loading}
                   style={{
                     width: 80,
                     height: 80,
                     fontSize: "2em",
                     margin: 3,
-                    cursor: "pointer",
+                    cursor: isTaken || winner ? "not-allowed" : "pointer",
+                    opacity: isTaken || winner ? 0.7 : 1,
                   }}
                 >
                   {cell === "-" ? "" : cell}
